@@ -1,0 +1,95 @@
+version: "3"
+
+networks:
+    laravel:
+        driver: bridge
+
+# Список наших сервисов (контейнеров)
+services:
+    nginx: # Имя сервиса
+        # используем последний стабильный образ nginx
+        image: nginx:latest
+        ports:
+            - "80:80"
+        # Перечисляем тома (volumes)
+        # Они будут подключены к файловой системе сервиса
+        # Например, всё что находится в . мы увидим в директории /var/www/html
+        # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
+        volumes:
+            - './docker/nginx/conf.d:/etc/nginx/conf.d'
+            - '.:/var/www/html'
+            - './docker/logs/nginx:/var/log/nginx'
+        environment:
+          - NGINX_HOST=laravel
+        # порядок зависимости запуска контейнеров
+        depends_on:
+          - php
+          - mysql
+        # nginx должен общаться с php контейнером
+        links:
+            - php
+        networks:
+            - laravel
+
+    php:
+        build:
+            context: './docker/php/'
+            # Имя докерфайла из которого будет собран образ
+            dockerfile: Dockerfile
+        environment:
+            - MYSQL_HOST=mysql
+            - MYSQL_DATABASE=laravel
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=root
+        volumes:
+            - './docker/php/php.ini:/usr/local/etc/php/php.ini'
+            - '.:/var/www/html'
+            - './docker/logs/php:/var/log/php'
+        depends_on: # Устанавливаем последовательность загрузки контейнеров
+            - mysql # mysql-контейнер запуститься раньше php
+        # этот образ будет общаться с mysql
+        links:
+            - mysql
+        networks:
+            - laravel
+
+    mysql:
+        image: mysql:8.4
+        ports:
+            - "3306:3306"
+        volumes:
+            - './docker/logs/mysql:/var/log/mysql'
+            - './docker/mysql/data:/var/lib/mysql'
+        # задаем пароль для root пользователя
+        environment:
+            MYSQL_ROOT_HOST: mysql # laravel в .env файле DB_HOST=MYSQL_ROOT_HOST
+            MYSQL_DATABASE: laravel
+            MYSQL_ROOT_PASSWORD: root
+        networks:
+            - laravel
+
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        ports:
+            - "8081:80"
+        volumes:
+            - './docker/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php'
+        environment:
+            - PMA_HOST=mysql
+            - PMA_ARBITRARY=1
+        networks:
+            - laravel
+
+    composer:
+        image: composer:latest
+        container_name: composer
+        volumes:
+            - '.:/var/www/html'
+        working_dir: /var/www/html
+        # command: install
+        depends_on: # Сервис будет запущен, только после старта php
+            - php
+        networks:
+            - laravel
+
