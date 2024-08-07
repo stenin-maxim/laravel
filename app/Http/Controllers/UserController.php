@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -11,54 +12,41 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
-    }
+        $usersRoles = DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->select('users.id', 'users.name', 'roles.name as role')
+            ->orderBy('users.id')
+            ->distinct()
+            ->get();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+        return response()->json([
+            'status' => true,
+            'message' => 'Users found successfully',
+            'data' => $usersRoles
+        ], 200);
     }
 
     /**
      * Display the specified resource.
+     * 
+     * @param string $id
      */
     public function show(string $id)
     {
-        //
-    }
+        $user = User::find($id);
+        $roles = DB::table('users')
+            ->join('role_user', 'users.id', '=', 'role_user.user_id')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->select('roles.name')
+            ->where('users.id', $id)
+            ->distinct()
+            ->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return response()->json([
+            'status' => true,
+            'message' => 'User found successfully',
+            'data' => ['user' => $user, 'roles' => $roles]
+        ], 200);
     }
 }
