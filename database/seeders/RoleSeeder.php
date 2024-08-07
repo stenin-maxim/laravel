@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Role;
+use App\RoleEnum;
 
 class RoleSeeder extends Seeder
 {
@@ -13,9 +14,9 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         Role::insert([
-            ['name' => 'Администратор', 'created_at' => now()],
-            ['name' => 'Редактор', 'created_at' => now()],
-            ['name' => 'Пользователь', 'created_at' => now()],
+            ['name' => RoleEnum::ADMIN, 'created_at' => now()],
+            ['name' => RoleEnum::EDITOR, 'created_at' => now()],
+            ['name' => RoleEnum::USER, 'created_at' => now()],
         ]);
     }
 }
