@@ -9,4 +9,5 @@
             GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
             FLUSH PRIVILEGES;
 
+docker-compose exec php bash
 php artisan migrate --seed
